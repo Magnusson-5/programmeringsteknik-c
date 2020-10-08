@@ -45,25 +45,31 @@ namespace Resizer
 
         static void Run(Options options)
         {
+            var directory = Path.GetDirectoryName(options.Input);
+            var files = Directory.GetFiles(directory, "*.jpg");
 
-            using (var stream = File.OpenRead(options.Input)) //ingående fil
+            foreach (var filePath in files)
             {
-                var outputFileName = GetOutputFileName(options.Input);
 
-                using (var outStream = File.OpenWrite(outputFileName)) // utgående fil
+                using (var stream = File.OpenRead(filePath)) //ingående fil
                 {
+                    var outputFileName = GetOutputFileName(filePath);
 
-                    using (var job = new ImageJob())
+                    using (var outStream = new FileStream(outputFileName, FileMode.Create, FileAccess.Write)) // utgående fil
                     {
-                        job.Decode(stream, false)
-                        #region // Här kan man ändra bilden innan den skrivs ut
+
+                        using (var job = new ImageJob())
+                        {
+                            job.Decode(stream, false)
+                            #region // Här kan man ändra bilden innan den skrivs ut
                             .Distort(812, 512)
 
-                        #endregion
+                            #endregion
                             .EncodeToStream(outStream, false, new MozJpegEncoder(90))
-                            .Finish()
-                            .InProcessAsync()
-                            .Wait();
+                                .Finish()
+                                .InProcessAsync()
+                                .Wait();
+                        }
                     }
                 }
             }
